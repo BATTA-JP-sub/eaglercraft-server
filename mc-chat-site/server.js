@@ -7,15 +7,14 @@ const mineflayer = require('mineflayer')
 
 // ===== 設定（環境変数で変更可能）=====
 // 画面でサーバーを指定しなかった場合の接続先
-const DEFAULT_SERVER = process.env.MC_WS_URL || 'wss://mc.lampnetwork.net'
+const DEFAULT_SERVER = process.env.MC_WS_URL || 'wss://mc.arch.lol'
 // GitHub Pagesなど別ドメインのフロントから使う場合だけ設定（例: https://あなたのID.github.io）
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || ''
-// 接続できるサーバーを限定したい場合だけ設定（例: mc.lampnetwork.net,example.com）。空なら制限なし
+// 接続できるサーバーを限定したい場合だけ設定（例: mc.arch.lol,example.com）。空なら制限なし
 const ALLOWED_SERVERS = (process.env.ALLOWED_SERVERS || '')
   .split(',')
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean)
-const CHAT_INTERVAL_MS = 1500 // 連続送信の最短間隔（スパム防止）
 const MAX_CHAT_LENGTH = 256
 // ====================================
 
