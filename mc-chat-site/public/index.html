@@ -170,13 +170,16 @@ const setStatus = (state, text) => {
   statusText.textContent = text
 }
 
-// ===== Minecraftの色コード(§)をHTMLに変換する =====
+// ===== Minecraftの色コード（§ と &）をHTMLに変換する =====
 const MC_COLORS = {
   '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
   '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
   '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
   'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
 }
+
+// "&a" のように色コードの文字が続く "&" だけを "§" に統一する（通常の文中の&はそのまま）
+const normalizeColorCodes = (text) => text.replace(/&(?=[0-9a-fk-or])/gi, '§')
 
 const mcToHtml = (text) => {
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -240,12 +243,13 @@ const addLog = (type, text) => {
   line.appendChild(tag)
 
   if (useColor) {
-    let display = text
-    const m = text.match(/^kicked:\s*(\{.*\})$/s)
+    let display = normalizeColorCodes(text)
+    const m = display.match(/^kicked:\s*(\{.*\})$/s)
     if (m) {
       try {
         const obj = JSON.parse(m[1])
         display = (obj.text || '') + (obj.extra ? obj.extra.map((e) => e.text || '').join('') : '')
+        display = normalizeColorCodes(display)
       } catch {}
     }
     const span = document.createElement('span')
@@ -258,7 +262,6 @@ const addLog = (type, text) => {
   log.appendChild(line)
   log.scrollTop = log.scrollHeight
 
-  // ステータス表示の更新
   if (type === 'status') {
     if (/^ログイン完了/.test(text)) setStatus('on', 'ログイン中')
     else if (/^切断されました/.test(text)) setStatus('off', '切断済み')
