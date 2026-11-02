@@ -463,10 +463,10 @@ const TYPE_COLOR = {
   sent: '#8fd1ff'
 }
 
-// 画面に追加するログキュー
+// 画面に表示するログをためるキュー
 const logQueue = []
 
-// ログを直接画面へ追加する
+// ログを画面に追加する
 const addLogNow = (type, text) => {
   text = String(text ?? '')
 
@@ -601,6 +601,10 @@ const sendChat = () => {
   }
 
   ws.send(JSON.stringify({ type: 'chat', text }))
+
+  // 送信したメッセージを自分のログにも追加
+  addLog('sent', text)
+
   $('text').value = ''
 }
 
