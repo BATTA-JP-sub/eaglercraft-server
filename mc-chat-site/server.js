@@ -15,6 +15,7 @@ const ALLOWED_SERVERS = (process.env.ALLOWED_SERVERS || '')
   .split(',')
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean)
+const CHAT_INTERVAL_MS = 1500 // 連続送信の最短間隔（スパム防止）
 const MAX_CHAT_LENGTH = 256
 // ====================================
 
@@ -93,7 +94,7 @@ wss.on('connection', (ui) => {
   let connecting = false
   let lastChatAt = 0
   let heartbeat = null
- 
+
   const send = (type, text) => {
     if (ui.readyState === WebSocket.OPEN) ui.send(JSON.stringify({ type, text }))
   }
@@ -129,7 +130,7 @@ wss.on('connection', (ui) => {
 
     bot.once('spawn', () => {
       send('status', '接続完了')
-      // 切断の原因を調べるための生存確認（5秒おき）
+      // 切断の原因を調べるための生存確認（10秒おき）
       heartbeat = setInterval(() => {
         if (!bot) return
         send('status', `生存確認 (${new Date().toLocaleTimeString('ja-JP')})`)
@@ -177,6 +178,9 @@ wss.on('connection', (ui) => {
       if (!bot) return send('error', '先にログインしてください')
       const text = String(msg.text || '').trim().slice(0, MAX_CHAT_LENGTH)
       if (!text) return
+      const now = Date.now()
+      if (now - lastChatAt < CHAT_INTERVAL_MS) return send('error', '送信が早すぎます')
+      lastChatAt = now
       bot.chat(text)
       send('sent', text)
     }
