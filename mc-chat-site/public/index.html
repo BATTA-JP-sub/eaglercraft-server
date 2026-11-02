@@ -204,7 +204,7 @@
   </div>
 
   <div class="btn-row">
-    <button id="login" class="btn-primary">ログイン</button>
+    <button id="login" class="btn-primary">接続</button>
     <button id="logout" class="btn-danger">切断</button>
   </div>
 </div>
@@ -503,13 +503,13 @@ const addLogNow = (type, text) => {
 
   if (type === 'status') {
     if (/^接続完了/.test(text)) {
-      setStatus('on', 'ログイン中')
+      setStatus('on', '接続中')
     } else if (/^切断されました/.test(text)) {
       setStatus('off', '切断済み')
     } else if (/^接続中/.test(text)) {
       setStatus('', '接続中...')
     } else if (/^生存確認/.test(text)) {
-      setStatus('on', 'ログイン中')
+      setStatus('on', '接続中')
     }
   }
 
