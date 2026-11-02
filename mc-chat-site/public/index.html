@@ -240,15 +240,27 @@ const setStatus = (state, text) => {
   statusText.textContent = text
 }
 
-// §カラーコード用
+// Minecraftの§カラーコード
 const MC_COLORS = {
-  '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
-  '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
-  '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
-  'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF'
+  '0': '#000000',
+  '1': '#0000AA',
+  '2': '#00AA00',
+  '3': '#00AAAA',
+  '4': '#AA0000',
+  '5': '#AA00AA',
+  '6': '#FFAA00',
+  '7': '#AAAAAA',
+  '8': '#555555',
+  '9': '#5555FF',
+  'a': '#55FF55',
+  'b': '#55FFFF',
+  'c': '#FF5555',
+  'd': '#FF55FF',
+  'e': '#FFFF55',
+  'f': '#FFFFFF'
 }
 
-// JSONコンポーネントの色名用
+// JSONコンポーネントの色名
 const MC_COMPONENT_COLORS = {
   black: '#000000',
   dark_blue: '#0000AA',
@@ -268,11 +280,11 @@ const MC_COMPONENT_COLORS = {
   white: '#FFFFFF'
 }
 
-// "&a" などの色コードを "§a" に統一
+// "&a" のような色コードを "§a" に統一する
 const normalizeColorCodes = (text) =>
   String(text).replace(/&(?=[0-9a-fk-or])/gi, '§')
 
-// §カラーコードをHTMLに変換
+// §カラーコード付きテキストをHTMLに変換
 const mcToHtml = (text) => {
   const escapeHtml = (value) =>
     value
@@ -359,7 +371,7 @@ const mcToHtml = (text) => {
   return html
 }
 
-// § / & カラーコードを含むテキストを追加
+// 色コード付きの通常テキストを安全に追加
 const appendLegacyText = (parent, value) => {
   const span = document.createElement('span')
   span.innerHTML = mcToHtml(normalizeColorCodes(String(value)))
@@ -371,7 +383,9 @@ const appendComponent = (parent, component, inheritedStyle = {}) => {
   if (component == null) return
 
   if (Array.isArray(component)) {
-    component.forEach((part) => appendComponent(part, component, inheritedStyle))
+    component.forEach((part) => {
+      appendComponent(parent, part, inheritedStyle)
+    })
     return
   }
 
@@ -397,6 +411,7 @@ const appendComponent = (parent, component, inheritedStyle = {}) => {
   if (style.italic) span.style.fontStyle = 'italic'
 
   const decorations = []
+
   if (style.underlined) decorations.push('underline')
   if (style.strikethrough) decorations.push('line-through')
 
@@ -417,7 +432,7 @@ const appendComponent = (parent, component, inheritedStyle = {}) => {
   parent.appendChild(span)
 }
 
-// JSONコンポーネントと通常の色コード付きテキストの両方に対応
+// JSONコンポーネントと§ / &カラーコードの両方に対応
 const appendChatText = (parent, text) => {
   const normalized = normalizeColorCodes(String(text))
 
@@ -471,7 +486,6 @@ const addLog = (type, text) => {
     const kickedMatch = text.match(/^kicked:\s*([\s\S]*)$/)
 
     if (kickedMatch) {
-      // "kicked:" のラベル部分は通常表示し、後ろの本文は色コード処理
       line.appendChild(document.createTextNode('kicked: '))
       appendChatText(line, kickedMatch[1])
     } else {
@@ -511,10 +525,14 @@ ws.onclose = () => {
 }
 
 ws.onmessage = (event) => {
+  console.log('受信データ:', event.data)
+
   try {
     const { type, text } = JSON.parse(event.data)
+    console.log('type:', type, 'text:', text)
     addLog(type, text)
   } catch (error) {
+    console.error('受信データの解析エラー:', error)
     addLog('error', `受信データを読み取れませんでした: ${error.message}`)
   }
 }
