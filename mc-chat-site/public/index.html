@@ -463,7 +463,11 @@ const TYPE_COLOR = {
   sent: '#8fd1ff'
 }
 
-const addLog = (type, text) => {
+// 画面に追加するログキュー
+const logQueue = []
+
+// ログを直接画面へ追加する
+const addLogNow = (type, text) => {
   text = String(text ?? '')
 
   const useColor =
@@ -496,7 +500,6 @@ const addLog = (type, text) => {
   }
 
   log.appendChild(line)
-  log.scrollTop = log.scrollHeight
 
   if (type === 'status') {
     if (/^ログイン完了/.test(text)) {
@@ -514,6 +517,24 @@ const addLog = (type, text) => {
     setStatus('off', 'キックされました')
   }
 }
+
+// ログをキューに入れる
+const addLog = (type, text) => {
+  logQueue.push([type, text])
+}
+
+// 0.5秒ごとに、たまったログをまとめて表示
+setInterval(() => {
+  if (logQueue.length === 0) return
+
+  const pendingLogs = logQueue.splice(0)
+
+  for (const [type, text] of pendingLogs) {
+    addLogNow(type, text)
+  }
+
+  log.scrollTop = log.scrollHeight
+}, 500)
 
 ws.onopen = () => {
   addLog('status', 'サーバーに接続しました')
