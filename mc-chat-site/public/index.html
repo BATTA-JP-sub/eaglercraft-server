@@ -107,10 +107,14 @@ const mcToHtml = (text) => {
   return html
 }
 
+const TYPE_LABEL = { chat: 'chat', status: 'status', error: 'error', auth: 'auth', sent: '送信' }
+
 const addLog = (type, text) => {
   // サーバーから来たメッセージ（チャットと、キック理由）はMinecraft風の色付きで表示
   const useColor = type === 'chat' || (type === 'error' && /^kicked:/.test(text))
+  const label = TYPE_LABEL[type] || type
   const line = document.createElement('div')
+  if (type === 'sent') line.style.color = '#8fd1ff'
   if (useColor) {
     let display = text
     const m = text.match(/^kicked:\s*(\{.*\})$/s)
@@ -120,9 +124,9 @@ const addLog = (type, text) => {
         display = (obj.text || '') + (obj.extra ? obj.extra.map((e) => e.text || '').join('') : '')
       } catch {}
     }
-    line.innerHTML = `[${type}] ` + mcToHtml(display)
+    line.innerHTML = `[${label}] ` + mcToHtml(display)
   } else {
-    line.textContent = `[${type}] ${text}`
+    line.textContent = `[${label}] ${text}`
   }
   log.appendChild(line)
   log.scrollTop = log.scrollHeight
