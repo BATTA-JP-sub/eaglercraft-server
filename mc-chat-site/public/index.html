@@ -17,6 +17,9 @@
 <h1>MC Chat</h1>
 
 <div class="row">
+  <input id="server" value="wss://mc.lampnetwork.net" placeholder="接続先サーバー（例: wss://example.com）">
+</div>
+<div class="row">
   <input id="user" placeholder="Microsoftアカウント / ニックネーム">
   <select id="auth">
     <option value="microsoft">Microsoft認証</option>
@@ -57,8 +60,21 @@ ws.onmessage = (e) => {
   addLog(type, text)
 }
 
-$('login').onclick = () =>
-  ws.send(JSON.stringify({ type: 'login', username: $('user').value, auth: $('auth').value }))
+// 前回入力したサーバーを復元（保存できない環境では無視）
+try {
+  const saved = localStorage.getItem('mc-server')
+  if (saved) $('server').value = saved
+} catch {}
+
+$('login').onclick = () => {
+  try { localStorage.setItem('mc-server', $('server').value) } catch {}
+  ws.send(JSON.stringify({
+    type: 'login',
+    server: $('server').value,
+    username: $('user').value,
+    auth: $('auth').value,
+  }))
+}
 $('logout').onclick = () => ws.send(JSON.stringify({ type: 'logout' }))
 
 const sendChat = () => {
