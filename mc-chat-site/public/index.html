@@ -13,11 +13,11 @@
     --text: #e7e7ef;
     --muted: #9a9aad;
     --accent: #5ec25e;
-    --accent-dark: #3f9a3f;
     --danger: #e05252;
-    --danger-dark: #b43d3d;
   }
+
   * { box-sizing: border-box; }
+
   body {
     font-family: "Segoe UI", system-ui, sans-serif;
     background: var(--bg);
@@ -26,12 +26,14 @@
     margin: 0 auto;
     padding: 1.5rem 1rem 3rem;
   }
+
   h1 {
     font-size: 1.4rem;
     text-align: center;
     margin: 0 0 1.25rem;
     letter-spacing: .5px;
   }
+
   h1::before { content: "⛏ "; }
 
   .card {
@@ -41,13 +43,20 @@
     padding: 1rem;
     margin-bottom: 1rem;
   }
+
   .field-label {
     font-size: .75rem;
     color: var(--muted);
     margin: 0 0 .3rem 2px;
     display: block;
   }
-  .row { display: flex; gap: .6rem; margin-bottom: .75rem; }
+
+  .row {
+    display: flex;
+    gap: .6rem;
+    margin-bottom: .75rem;
+  }
+
   .row:last-child { margin-bottom: 0; }
   .row.split > * { flex: 1; }
 
@@ -62,6 +71,7 @@
     outline: none;
     transition: border-color .15s;
   }
+
   input::placeholder { color: var(--muted); }
   input:focus, select:focus { border-color: var(--accent); }
 
@@ -74,25 +84,53 @@
     cursor: pointer;
     transition: filter .15s, transform .05s;
   }
+
   button:active { transform: translateY(1px); }
-  .btn-primary { background: var(--accent); color: #0e1a0e; }
-  .btn-primary:hover { filter: brightness(1.08); }
-  .btn-danger { background: var(--danger); color: #1a0e0e; }
-  .btn-danger:hover { filter: brightness(1.08); }
-  .btn-row { display: flex; gap: .6rem; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0e1a0e;
+  }
+
+  .btn-primary:hover, .btn-danger:hover { filter: brightness(1.08); }
+
+  .btn-danger {
+    background: var(--danger);
+    color: #1a0e0e;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: .6rem;
+  }
+
   .btn-row button { flex: 1; }
 
   #status-dot {
     display: inline-block;
-    width: 9px; height: 9px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: var(--muted);
     margin-right: 6px;
     vertical-align: middle;
   }
-  #status-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-  #status-dot.off { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
-  #status-text { font-size: .8rem; color: var(--muted); vertical-align: middle; }
+
+  #status-dot.on {
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  #status-dot.off {
+    background: var(--danger);
+    box-shadow: 0 0 6px var(--danger);
+  }
+
+  #status-text {
+    font-size: .8rem;
+    color: var(--muted);
+    vertical-align: middle;
+  }
 
   #log {
     height: 320px;
@@ -105,23 +143,46 @@
     font-size: .82rem;
     line-height: 1.5;
   }
-  #log div { padding: 1px 0; word-break: break-word; }
-  #log .tag { color: var(--muted); margin-right: 4px; }
-  #log::-webkit-scrollbar { width: 8px; }
-  #log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-  .chat-row { display: flex; gap: .6rem; margin-top: .75rem; }
+  #log div {
+    padding: 1px 0;
+    word-break: break-word;
+  }
+
+  #log .tag {
+    color: var(--muted);
+    margin-right: 4px;
+  }
+
+  #log::-webkit-scrollbar { width: 8px; }
+  #log::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  .chat-row {
+    display: flex;
+    gap: .6rem;
+    margin-top: .75rem;
+  }
+
   .chat-row input { flex: 1; }
 </style>
 </head>
+
 <body>
 <h1>MC Chat</h1>
 
 <div class="card">
   <span class="field-label">接続先サーバー</span>
   <div class="row">
-    <input id="server" value="wss://mc.lampnetwork.net" placeholder="wss://... または mc.example.com:25565">
+    <input
+      id="server"
+      value="wss://mc.lampnetwork.net"
+      placeholder="wss://... または mc.example.com:25565"
+    >
   </div>
+
   <div class="row split">
     <div>
       <span class="field-label">バージョン（空欄で自動）</span>
@@ -135,9 +196,11 @@
       </select>
     </div>
   </div>
+
   <div class="row">
     <input id="user" placeholder="Microsoftアカウント / ニックネーム">
   </div>
+
   <div class="btn-row">
     <button id="login" class="btn-primary">ログイン</button>
     <button id="logout" class="btn-danger">切断</button>
@@ -148,7 +211,9 @@
   <div style="margin-bottom:.6rem;">
     <span id="status-dot"></span><span id="status-text">未接続</span>
   </div>
+
   <div id="log"></div>
+
   <div class="chat-row">
     <input id="text" placeholder="メッセージを入力..." maxlength="256">
     <button id="send" class="btn-primary">送信</button>
@@ -158,8 +223,11 @@
 <script>
 const BACKEND_URL = ''
 
-const url = BACKEND_URL || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`
+const url = BACKEND_URL ||
+  `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`
+
 const ws = new WebSocket(url)
+
 const $ = (id) => document.getElementById(id)
 const log = $('log')
 const dot = $('status-dot')
@@ -170,21 +238,61 @@ const setStatus = (state, text) => {
   statusText.textContent = text
 }
 
-// ===== Minecraftの色コード（§ と &）をHTMLに変換する =====
+// Minecraftの§カラーコード用
 const MC_COLORS = {
-  '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
-  '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
-  '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
-  'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
+  '0': '#000000',
+  '1': '#0000AA',
+  '2': '#00AA00',
+  '3': '#00AAAA',
+  '4': '#AA0000',
+  '5': '#AA00AA',
+  '6': '#FFAA00',
+  '7': '#AAAAAA',
+  '8': '#555555',
+  '9': '#5555FF',
+  'a': '#55FF55',
+  'b': '#55FFFF',
+  'c': '#FF5555',
+  'd': '#FF55FF',
+  'e': '#FFFF55',
+  'f': '#FFFFFF',
 }
 
-// "&a" のように色コードの文字が続く "&" だけを "§" に統一する（通常の文中の&はそのまま）
-const normalizeColorCodes = (text) => text.replace(/&(?=[0-9a-fk-or])/gi, '§')
+// JSONコンポーネントの色名用
+const MC_COMPONENT_COLORS = {
+  black: '#000000',
+  dark_blue: '#0000AA',
+  dark_green: '#00AA00',
+  dark_aqua: '#00AAAA',
+  dark_red: '#AA0000',
+  dark_purple: '#AA00AA',
+  gold: '#FFAA00',
+  gray: '#AAAAAA',
+  dark_gray: '#555555',
+  blue: '#5555FF',
+  green: '#55FF55',
+  aqua: '#55FFFF',
+  red: '#FF5555',
+  light_purple: '#FF55FF',
+  yellow: '#FFFF55',
+  white: '#FFFFFF',
+}
 
+// "&a" など色コード形式の&を§に変換
+const normalizeColorCodes = (text) =>
+  text.replace(/&(?=[0-9a-fk-or])/gi, '§')
+
+// §カラーコードをHTMLに変換
 const mcToHtml = (text) => {
-  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const escapeHtml = (value) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+
   let html = ''
-  let span = false
   let color = null
   let bold = false
   let italic = false
@@ -192,69 +300,192 @@ const mcToHtml = (text) => {
   let underline = false
 
   const openSpan = () => {
-    if (span) html += '</span>'
-    const styles = [`color:${color || 'inherit'}`]
+    const styles = []
+
+    if (color) styles.push(`color:${color}`)
     if (bold) styles.push('font-weight:bold')
     if (italic) styles.push('font-style:italic')
-    const deco = []
-    if (strike) deco.push('line-through')
-    if (underline) deco.push('underline')
-    if (deco.length) styles.push(`text-decoration:${deco.join(' ')}`)
-    html += `<span style="${styles.join(';')}">`
-    span = true
+
+    const decorations = []
+    if (strike) decorations.push('line-through')
+    if (underline) decorations.push('underline')
+    if (decorations.length) {
+      styles.push(`text-decoration:${decorations.join(' ')}`)
+    }
+
+    return `<span${styles.length ? ` style="${styles.join(';')}"` : ''}>`
   }
 
-  openSpan()
+  html += openSpan()
+
   const parts = text.split('§')
+
   for (let i = 0; i < parts.length; i++) {
     if (i === 0) {
-      html += esc(parts[i])
+      html += escapeHtml(parts[i])
       continue
     }
+
     const code = parts[i][0]?.toLowerCase()
     const rest = parts[i].slice(1)
+
     if (MC_COLORS[code]) {
       color = MC_COLORS[code]
-      bold = italic = strike = underline = false
-      openSpan()
-    } else if (code === 'l') { bold = true; openSpan() }
-    else if (code === 'o') { italic = true; openSpan() }
-    else if (code === 'm') { strike = true; openSpan() }
-    else if (code === 'n') { underline = true; openSpan() }
-    else if (code === 'r') { color = null; bold = italic = strike = underline = false; openSpan() }
-    html += esc(rest)
+      bold = false
+      italic = false
+      strike = false
+      underline = false
+      html += `</span>${openSpan()}`
+    } else if (code === 'l') {
+      bold = true
+      html += `</span>${openSpan()}`
+    } else if (code === 'o') {
+      italic = true
+      html += `</span>${openSpan()}`
+    } else if (code === 'm') {
+      strike = true
+      html += `</span>${openSpan()}`
+    } else if (code === 'n') {
+      underline = true
+      html += `</span>${openSpan()}`
+    } else if (code === 'r') {
+      color = null
+      bold = false
+      italic = false
+      strike = false
+      underline = false
+      html += `</span>${openSpan()}`
+    }
+
+    html += escapeHtml(rest)
   }
-  if (span) html += '</span>'
+
+  html += '</span>'
   return html
 }
 
-const TYPE_LABEL = { chat: 'chat', status: 'status', error: 'error', auth: 'auth', sent: '送信' }
-const TYPE_COLOR = { status: '#7fb8e0', error: '#e05252', auth: '#e0c050', sent: '#8fd1ff' }
+// JSONテキストコンポーネントを安全にDOMへ追加
+const appendComponent = (parent, component, inheritedStyle = {}) => {
+  if (component == null) return
+
+  if (Array.isArray(component)) {
+    component.forEach((part) =>
+      appendComponent(parent, part, inheritedStyle)
+    )
+    return
+  }
+
+  if (typeof component === 'string' || typeof component === 'number') {
+    parent.appendChild(document.createTextNode(String(component)))
+    return
+  }
+
+  if (typeof component !== 'object') return
+
+  const style = { ...inheritedStyle, ...component }
+  const span = document.createElement('span')
+
+  if (typeof style.color === 'string') {
+    const color = MC_COMPONENT_COLORS[style.color] || style.color
+
+    // CSSカラー値として安全な形式だけを適用
+    if (/^#[0-9a-f]{3,8}$/i.test(color) ||
+        /^[a-z]+$/i.test(color)) {
+      span.style.color = color
+    }
+  }
+
+  if (style.bold) span.style.fontWeight = 'bold'
+  if (style.italic) span.style.fontStyle = 'italic'
+
+  const decorations = []
+  if (style.underlined) decorations.push('underline')
+  if (style.strikethrough) decorations.push('line-through')
+  if (decorations.length) {
+    span.style.textDecoration = decorations.join(' ')
+  }
+
+  if (component.text != null) {
+    span.appendChild(document.createTextNode(String(component.text)))
+  } else if (component.translate != null) {
+    // 翻訳キーを持つコンポーネントの簡易表示
+    span.appendChild(document.createTextNode(String(component.translate)))
+  }
+
+  if (component.extra) {
+    appendComponent(span, component.extra, style)
+  }
+
+  parent.appendChild(span)
+}
+
+// JSONコンポーネントと§/&カラーコードの両方に対応
+const appendChatText = (parent, text) => {
+  const normalized = normalizeColorCodes(String(text))
+
+  try {
+    const component = JSON.parse(normalized)
+
+    if (component && typeof component === 'object') {
+      appendComponent(parent, component)
+      return
+    }
+  } catch {}
+
+  parent.innerHTML = mcToHtml(normalized)
+}
+
+const TYPE_LABEL = {
+  chat: 'chat',
+  status: 'status',
+  error: 'error',
+  auth: 'auth',
+  sent: '送信'
+}
+
+const TYPE_COLOR = {
+  status: '#7fb8e0',
+  error: '#e05252',
+  auth: '#e0c050',
+  sent: '#8fd1ff'
+}
 
 const addLog = (type, text) => {
-  const useColor = type === 'chat' || (type === 'error' && /^kicked:/.test(text))
+  text = String(text ?? '')
+
+  const useColor =
+    type === 'chat' ||
+    (type === 'error' && /^kicked:/.test(text))
+
   const label = TYPE_LABEL[type] || type
   const line = document.createElement('div')
 
   const tag = document.createElement('span')
   tag.className = 'tag'
   tag.textContent = `[${label}]`
-  if (TYPE_COLOR[type]) tag.style.color = TYPE_COLOR[type]
+
+  if (TYPE_COLOR[type]) {
+    tag.style.color = TYPE_COLOR[type]
+  }
+
   line.appendChild(tag)
 
   if (useColor) {
-    let display = normalizeColorCodes(text)
-    const m = display.match(/^kicked:\s*(\{.*\})$/s)
-    if (m) {
-      try {
-        const obj = JSON.parse(m[1])
-        display = (obj.text || '') + (obj.extra ? obj.extra.map((e) => e.text || '').join('') : '')
-        display = normalizeColorCodes(display)
-      } catch {}
+    let display = text
+
+    // kicked: の後ろがJSONなら、JSONコンポーネントとして処理する
+    const kickedMatch = display.match(/^kicked:\s*(\{[\s\S]*\})$/)
+
+    if (kickedMatch) {
+      const contentSpan = document.createElement('span')
+      line.appendChild(document.createTextNode('kicked: '))
+      appendChatText(contentSpan, kickedMatch[1])
+      line.appendChild(contentSpan)
+    } else {
+      const contentSpan = document.createElement('span')
+      appendChatText(contentSpan, display)
+      line.appendChild(contentSpan)
     }
-    const span = document.createElement('span')
-    span.innerHTML = mcToHtml(display)
-    line.appendChild(span)
   } else {
     line.appendChild(document.createTextNode(text))
   }
@@ -263,20 +494,36 @@ const addLog = (type, text) => {
   log.scrollTop = log.scrollHeight
 
   if (type === 'status') {
-    if (/^ログイン完了/.test(text)) setStatus('on', 'ログイン中')
-    else if (/^切断されました/.test(text)) setStatus('off', '切断済み')
-    else if (/^接続中/.test(text)) setStatus('', '接続中...')
-    else if (/^生存確認/.test(text)) setStatus('on', 'ログイン中')
+    if (/^ログイン完了/.test(text)) {
+      setStatus('on', 'ログイン中')
+    } else if (/^切断されました/.test(text)) {
+      setStatus('off', '切断済み')
+    } else if (/^接続中/.test(text)) {
+      setStatus('', '接続中...')
+    } else if (/^生存確認/.test(text)) {
+      setStatus('on', 'ログイン中')
+    }
   }
-  if (type === 'error' && /^kicked:/.test(text)) setStatus('off', 'キックされました')
+
+  if (type === 'error' && /^kicked:/.test(text)) {
+    setStatus('off', 'キックされました')
+  }
 }
-// ===============================================
 
 ws.onopen = () => addLog('status', 'サーバーに接続しました')
-ws.onclose = () => { addLog('status', 'サーバーとの接続が切れました'); setStatus('off', '未接続') }
-ws.onmessage = (e) => {
-  const { type, text } = JSON.parse(e.data)
-  addLog(type, text)
+
+ws.onclose = () => {
+  addLog('status', 'サーバーとの接続が切れました')
+  setStatus('off', '未接続')
+}
+
+ws.onmessage = (event) => {
+  try {
+    const { type, text } = JSON.parse(event.data)
+    addLog(type, text)
+  } catch (error) {
+    addLog('error', `受信データを読み取れませんでした: ${error.message}`)
+  }
 }
 
 try {
@@ -285,27 +532,50 @@ try {
 } catch {}
 
 $('login').onclick = () => {
-  try { localStorage.setItem('mc-server', $('server').value) } catch {}
+  if (ws.readyState !== WebSocket.OPEN) {
+    addLog('error', 'サーバーとの接続がありません')
+    return
+  }
+
+  try {
+    localStorage.setItem('mc-server', $('server').value)
+  } catch {}
+
   setStatus('', '接続中...')
+
   ws.send(JSON.stringify({
     type: 'login',
     server: $('server').value,
     version: $('version').value,
     username: $('user').value,
-    auth: $('auth').value,
+    auth: $('auth').value
   }))
 }
-$('logout').onclick = () => ws.send(JSON.stringify({ type: 'logout' }))
+
+$('logout').onclick = () => {
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'logout' }))
+  }
+}
 
 const sendChat = () => {
   const text = $('text').value
+
   if (!text.trim()) return
+
+  if (ws.readyState !== WebSocket.OPEN) {
+    addLog('error', 'サーバーとの接続がありません')
+    return
+  }
+
   ws.send(JSON.stringify({ type: 'chat', text }))
   $('text').value = ''
 }
+
 $('send').onclick = sendChat
-$('text').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') sendChat()
+
+$('text').addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') sendChat()
 })
 </script>
 </body>
