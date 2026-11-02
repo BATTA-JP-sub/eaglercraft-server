@@ -467,11 +467,8 @@ const TYPE_COLOR = {
   sent: '#8fd1ff'
 }
 
-// 画面に追加するログキュー
-const logQueue = []
-
-// ログを直接画面へ追加する
-const addLogNow = (type, text) => {
+// ログを画面へ追加する（届いたらすぐ表示）
+const addLog = (type, text) => {
   text = String(text ?? '')
 
   const useColor =
@@ -504,6 +501,7 @@ const addLogNow = (type, text) => {
   }
 
   log.appendChild(line)
+  log.scrollTop = log.scrollHeight
 
   if (type === 'status') {
     if (/^接続完了/.test(text)) {
@@ -522,24 +520,6 @@ const addLogNow = (type, text) => {
   }
 }
 
-// ログをキューに入れる
-const addLog = (type, text) => {
-  logQueue.push([type, text])
-}
-
-// 0.5秒ごとに、たまったログをまとめて表示
-setInterval(() => {
-  if (logQueue.length === 0) return
-
-  const pendingLogs = logQueue.splice(0)
-
-  for (const [type, text] of pendingLogs) {
-    addLogNow(type, text)
-  }
-
-  log.scrollTop = log.scrollHeight
-}, 500)
-
 ws.onopen = () => {
   addLog('status', 'サーバーに接続しました')
 }
@@ -550,14 +530,10 @@ ws.onclose = () => {
 }
 
 ws.onmessage = (event) => {
-  console.log('受信データ:', event.data)
-
   try {
     const { type, text } = JSON.parse(event.data)
-    console.log('type:', type, 'text:', text)
     addLog(type, text)
   } catch (error) {
-    console.error('受信データの解析エラー:', error)
     addLog('error', `受信データを読み取れませんでした: ${error.message}`)
   }
 }
