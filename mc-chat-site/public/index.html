@@ -422,7 +422,11 @@ const appendComponent = (parent, component, inheritedStyle = {}) => {
   if (component.text != null) {
     appendLegacyText(span, component.text)
   } else if (component.translate != null) {
-    appendLegacyText(span, component.translate)
+    // 翻訳キーのみの場合は内部名をそのまま出さず、簡単な注記にする
+    const withArgs = Array.isArray(component.with)
+      ? component.with.map((w) => (typeof w === 'string' ? w : '')).join(' ')
+      : ''
+    appendLegacyText(span, withArgs || `[${component.translate}]`)
   }
 
   if (component.extra) {
