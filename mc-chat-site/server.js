@@ -132,7 +132,7 @@ wss.on('connection', (ui) => {
     bot.on('kicked', (reason) => send('error', 'kicked: ' + reason))
     bot.on('error', (e) => send('error', String(e)))
     bot.on('end', (reason) => {
-      send('status', '切断されました')
+      send('status', '切断されました' + reason)
       bot = null
     })
   }
