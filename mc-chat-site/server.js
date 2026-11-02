@@ -149,7 +149,7 @@ wss.on('connection', (ui) => {
   }
 
   // Mineflayerが把握しているボットの状態を読み取り、画面へ送る
- // プレイヤーの現在の状態（そっくりに模倣するためのベースデータ）
+　// プレイヤーの現在の状態（そっくりに模倣するためのベースデータ）
 const playerState = {
     x: 120.50,
     y: 64.00,
@@ -253,6 +253,7 @@ function sendPlayerPackets(client) {
         slotId: playerState.heldItemSlot
     });
 }
+
 
   const startBot = (username, auth, target, version) => {
     send(
