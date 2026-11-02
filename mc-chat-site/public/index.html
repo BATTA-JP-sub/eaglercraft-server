@@ -463,10 +463,10 @@ const TYPE_COLOR = {
   sent: '#8fd1ff'
 }
 
-// 画面に表示するログをためるキュー
+// 画面に追加するログキュー
 const logQueue = []
 
-// ログを直接画面に追加する
+// ログを直接画面へ追加する
 const addLogNow = (type, text) => {
   text = String(text ?? '')
 
@@ -518,18 +518,12 @@ const addLogNow = (type, text) => {
   }
 }
 
-// 自分の送信ログはすぐ表示し、その他のログはキューに入れる
+// ログをキューに入れる
 const addLog = (type, text) => {
-  if (type === 'sent') {
-    addLogNow(type, text)
-    log.scrollTop = log.scrollHeight
-    return
-  }
-
   logQueue.push([type, text])
 }
 
-// 0.5秒ごとにキュー内のログをまとめて表示
+// 0.5秒ごとに、たまったログをまとめて表示
 setInterval(() => {
   if (logQueue.length === 0) return
 
@@ -597,9 +591,9 @@ $('logout').onclick = () => {
 }
 
 const sendChat = () => {
-  const text = $('text').value.trim()
+  const text = $('text').value
 
-  if (!text) return
+  if (!text.trim()) return
 
   if (ws.readyState !== WebSocket.OPEN) {
     addLog('error', 'サーバーとの接続がありません')
@@ -607,19 +601,13 @@ const sendChat = () => {
   }
 
   ws.send(JSON.stringify({ type: 'chat', text }))
-
-  // 送信した内容をすぐログに表示
-  addLog('sent', text)
-
   $('text').value = ''
 }
 
 $('send').onclick = sendChat
 
 $('text').addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    sendChat()
-  }
+  if (event.key === 'Enter') sendChat()
 })
 </script>
 </body>
