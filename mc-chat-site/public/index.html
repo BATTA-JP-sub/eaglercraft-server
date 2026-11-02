@@ -92,12 +92,13 @@
     color: #0e1a0e;
   }
 
-  .btn-primary:hover, .btn-danger:hover { filter: brightness(1.08); }
-
   .btn-danger {
     background: var(--danger);
     color: #1a0e0e;
   }
+
+  .btn-primary:hover,
+  .btn-danger:hover { filter: brightness(1.08); }
 
   .btn-row {
     display: flex;
@@ -155,6 +156,7 @@
   }
 
   #log::-webkit-scrollbar { width: 8px; }
+
   #log::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 4px;
@@ -238,24 +240,12 @@ const setStatus = (state, text) => {
   statusText.textContent = text
 }
 
-// Minecraftの§カラーコード用
+// §カラーコード用
 const MC_COLORS = {
-  '0': '#000000',
-  '1': '#0000AA',
-  '2': '#00AA00',
-  '3': '#00AAAA',
-  '4': '#AA0000',
-  '5': '#AA00AA',
-  '6': '#FFAA00',
-  '7': '#AAAAAA',
-  '8': '#555555',
-  '9': '#5555FF',
-  'a': '#55FF55',
-  'b': '#55FFFF',
-  'c': '#FF5555',
-  'd': '#FF55FF',
-  'e': '#FFFF55',
-  'f': '#FFFFFF',
+  '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+  '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+  '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
+  'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF'
 }
 
 // JSONコンポーネントの色名用
@@ -275,12 +265,12 @@ const MC_COMPONENT_COLORS = {
   red: '#FF5555',
   light_purple: '#FF55FF',
   yellow: '#FFFF55',
-  white: '#FFFFFF',
+  white: '#FFFFFF'
 }
 
-// "&a" など色コード形式の&を§に変換
+// "&a" などの色コードを "§a" に統一
 const normalizeColorCodes = (text) =>
-  text.replace(/&(?=[0-9a-fk-or])/gi, '§')
+  String(text).replace(/&(?=[0-9a-fk-or])/gi, '§')
 
 // §カラーコードをHTMLに変換
 const mcToHtml = (text) => {
@@ -298,8 +288,11 @@ const mcToHtml = (text) => {
   let italic = false
   let strike = false
   let underline = false
+  let buffer = ''
 
-  const openSpan = () => {
+  const flush = () => {
+    if (!buffer) return
+
     const styles = []
 
     if (color) styles.push(`color:${color}`)
@@ -309,25 +302,35 @@ const mcToHtml = (text) => {
     const decorations = []
     if (strike) decorations.push('line-through')
     if (underline) decorations.push('underline')
+
     if (decorations.length) {
       styles.push(`text-decoration:${decorations.join(' ')}`)
     }
 
-    return `<span${styles.length ? ` style="${styles.join(';')}"` : ''}>`
+    const safeText = escapeHtml(buffer)
+
+    html += styles.length
+      ? `<span style="${styles.join(';')}">${safeText}</span>`
+      : safeText
+
+    buffer = ''
   }
 
-  html += openSpan()
-
-  const parts = text.split('§')
-
-  for (let i = 0; i < parts.length; i++) {
-    if (i === 0) {
-      html += escapeHtml(parts[i])
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== '§' || i + 1 >= text.length) {
+      buffer += text[i]
       continue
     }
 
-    const code = parts[i][0]?.toLowerCase()
-    const rest = parts[i].slice(1)
+    const code = text[i + 1].toLowerCase()
+
+    if (!/[0-9a-fk-or]/.test(code)) {
+      buffer += text[i]
+      continue
+    }
+
+    flush()
+    i++
 
     if (MC_COLORS[code]) {
       color = MC_COLORS[code]
@@ -335,48 +338,45 @@ const mcToHtml = (text) => {
       italic = false
       strike = false
       underline = false
-      html += `</span>${openSpan()}`
     } else if (code === 'l') {
       bold = true
-      html += `</span>${openSpan()}`
     } else if (code === 'o') {
       italic = true
-      html += `</span>${openSpan()}`
     } else if (code === 'm') {
       strike = true
-      html += `</span>${openSpan()}`
     } else if (code === 'n') {
       underline = true
-      html += `</span>${openSpan()}`
     } else if (code === 'r') {
       color = null
       bold = false
       italic = false
       strike = false
       underline = false
-      html += `</span>${openSpan()}`
     }
-
-    html += escapeHtml(rest)
   }
 
-  html += '</span>'
+  flush()
   return html
 }
 
-// JSONテキストコンポーネントを安全にDOMへ追加
+// § / & カラーコードを含むテキストを追加
+const appendLegacyText = (parent, value) => {
+  const span = document.createElement('span')
+  span.innerHTML = mcToHtml(normalizeColorCodes(String(value)))
+  parent.appendChild(span)
+}
+
+// JSONテキストコンポーネントを追加
 const appendComponent = (parent, component, inheritedStyle = {}) => {
   if (component == null) return
 
   if (Array.isArray(component)) {
-    component.forEach((part) =>
-      appendComponent(parent, part, inheritedStyle)
-    )
+    component.forEach((part) => appendComponent(part, component, inheritedStyle))
     return
   }
 
   if (typeof component === 'string' || typeof component === 'number') {
-    parent.appendChild(document.createTextNode(String(component)))
+    appendLegacyText(parent, component)
     return
   }
 
@@ -388,9 +388,7 @@ const appendComponent = (parent, component, inheritedStyle = {}) => {
   if (typeof style.color === 'string') {
     const color = MC_COMPONENT_COLORS[style.color] || style.color
 
-    // CSSカラー値として安全な形式だけを適用
-    if (/^#[0-9a-f]{3,8}$/i.test(color) ||
-        /^[a-z]+$/i.test(color)) {
+    if (/^#[0-9a-f]{3,8}$/i.test(color) || /^[a-z]+$/i.test(color)) {
       span.style.color = color
     }
   }
@@ -401,15 +399,15 @@ const appendComponent = (parent, component, inheritedStyle = {}) => {
   const decorations = []
   if (style.underlined) decorations.push('underline')
   if (style.strikethrough) decorations.push('line-through')
+
   if (decorations.length) {
     span.style.textDecoration = decorations.join(' ')
   }
 
   if (component.text != null) {
-    span.appendChild(document.createTextNode(String(component.text)))
+    appendLegacyText(span, component.text)
   } else if (component.translate != null) {
-    // 翻訳キーを持つコンポーネントの簡易表示
-    span.appendChild(document.createTextNode(String(component.translate)))
+    appendLegacyText(span, component.translate)
   }
 
   if (component.extra) {
@@ -419,7 +417,7 @@ const appendComponent = (parent, component, inheritedStyle = {}) => {
   parent.appendChild(span)
 }
 
-// JSONコンポーネントと§/&カラーコードの両方に対応
+// JSONコンポーネントと通常の色コード付きテキストの両方に対応
 const appendChatText = (parent, text) => {
   const normalized = normalizeColorCodes(String(text))
 
@@ -432,7 +430,7 @@ const appendChatText = (parent, text) => {
     }
   } catch {}
 
-  parent.innerHTML = mcToHtml(normalized)
+  appendLegacyText(parent, normalized)
 }
 
 const TYPE_LABEL = {
@@ -457,12 +455,11 @@ const addLog = (type, text) => {
     type === 'chat' ||
     (type === 'error' && /^kicked:/.test(text))
 
-  const label = TYPE_LABEL[type] || type
   const line = document.createElement('div')
-
   const tag = document.createElement('span')
+
   tag.className = 'tag'
-  tag.textContent = `[${label}]`
+  tag.textContent = `[${TYPE_LABEL[type] || type}]`
 
   if (TYPE_COLOR[type]) {
     tag.style.color = TYPE_COLOR[type]
@@ -471,20 +468,14 @@ const addLog = (type, text) => {
   line.appendChild(tag)
 
   if (useColor) {
-    let display = text
-
-    // kicked: の後ろがJSONなら、JSONコンポーネントとして処理する
-    const kickedMatch = display.match(/^kicked:\s*(\{[\s\S]*\})$/)
+    const kickedMatch = text.match(/^kicked:\s*([\s\S]*)$/)
 
     if (kickedMatch) {
-      const contentSpan = document.createElement('span')
+      // "kicked:" のラベル部分は通常表示し、後ろの本文は色コード処理
       line.appendChild(document.createTextNode('kicked: '))
-      appendChatText(contentSpan, kickedMatch[1])
-      line.appendChild(contentSpan)
+      appendChatText(line, kickedMatch[1])
     } else {
-      const contentSpan = document.createElement('span')
-      appendChatText(contentSpan, display)
-      line.appendChild(contentSpan)
+      appendChatText(line, text)
     }
   } else {
     line.appendChild(document.createTextNode(text))
@@ -510,7 +501,9 @@ const addLog = (type, text) => {
   }
 }
 
-ws.onopen = () => addLog('status', 'サーバーに接続しました')
+ws.onopen = () => {
+  addLog('status', 'サーバーに接続しました')
+}
 
 ws.onclose = () => {
   addLog('status', 'サーバーとの接続が切れました')
