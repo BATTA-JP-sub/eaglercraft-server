@@ -5,52 +5,170 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MC Chat</title>
 <style>
-  body { font-family: sans-serif; max-width: 640px; margin: 1rem auto; padding: 0 1rem; }
-  .row { display: flex; gap: .5rem; margin: .5rem 0; }
-  .row input, .row select { flex: 1; padding: .5rem; }
-  button { padding: .5rem 1rem; }
-  #log { height: 320px; overflow: auto; border: 1px solid #888; padding: .5rem;
-         white-space: pre-wrap; font-family: monospace; font-size: 13px;
-         background: #1e1e1e; color: #ddd; }
+  :root {
+    --bg: #1b1b22;
+    --panel: #2a2a35;
+    --panel-2: #33333f;
+    --border: #46465a;
+    --text: #e7e7ef;
+    --muted: #9a9aad;
+    --accent: #5ec25e;
+    --accent-dark: #3f9a3f;
+    --danger: #e05252;
+    --danger-dark: #b43d3d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    text-align: center;
+    margin: 0 0 1.25rem;
+    letter-spacing: .5px;
+  }
+  h1::before { content: "⛏ "; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .field-label {
+    font-size: .75rem;
+    color: var(--muted);
+    margin: 0 0 .3rem 2px;
+    display: block;
+  }
+  .row { display: flex; gap: .6rem; margin-bottom: .75rem; }
+  .row:last-child { margin-bottom: 0; }
+  .row.split > * { flex: 1; }
+
+  input, select {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: .55rem .7rem;
+    font-size: .9rem;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input::placeholder { color: var(--muted); }
+  input:focus, select:focus { border-color: var(--accent); }
+
+  button {
+    border: none;
+    border-radius: 6px;
+    padding: .6rem 1rem;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter .15s, transform .05s;
+  }
+  button:active { transform: translateY(1px); }
+  .btn-primary { background: var(--accent); color: #0e1a0e; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-danger { background: var(--danger); color: #1a0e0e; }
+  .btn-danger:hover { filter: brightness(1.08); }
+  .btn-row { display: flex; gap: .6rem; }
+  .btn-row button { flex: 1; }
+
+  #status-dot {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--muted);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  #status-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  #status-dot.off { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+  #status-text { font-size: .8rem; color: var(--muted); vertical-align: middle; }
+
+  #log {
+    height: 320px;
+    overflow-y: auto;
+    background: #141418;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .6rem .7rem;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: .82rem;
+    line-height: 1.5;
+  }
+  #log div { padding: 1px 0; word-break: break-word; }
+  #log .tag { color: var(--muted); margin-right: 4px; }
+  #log::-webkit-scrollbar { width: 8px; }
+  #log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .chat-row { display: flex; gap: .6rem; margin-top: .75rem; }
+  .chat-row input { flex: 1; }
 </style>
 </head>
 <body>
 <h1>MC Chat</h1>
 
-<div class="row">
-  <input id="server" value="wss://mc.lampnetwork.net" placeholder="wss://... または mc.example.com:25565">
-</div>
-<div class="row">
-  <input id="version" placeholder="バージョン（空欄で自動。例: 1.8.8）">
-</div>
-<div class="row">
-  <input id="user" placeholder="Microsoftアカウント / ニックネーム">
-  <select id="auth">
-    <option value="microsoft">Microsoft認証</option>
-    <option value="offline">オフラインモード</option>
-  </select>
-</div>
-<div class="row">
-  <button id="login">ログイン</button>
-  <button id="logout">切断</button>
+<div class="card">
+  <span class="field-label">接続先サーバー</span>
+  <div class="row">
+    <input id="server" value="wss://mc.lampnetwork.net" placeholder="wss://... または mc.example.com:25565">
+  </div>
+  <div class="row split">
+    <div>
+      <span class="field-label">バージョン（空欄で自動）</span>
+      <input id="version" placeholder="例: 1.8.8">
+    </div>
+    <div>
+      <span class="field-label">認証方式</span>
+      <select id="auth">
+        <option value="microsoft">Microsoft認証</option>
+        <option value="offline">オフラインモード</option>
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <input id="user" placeholder="Microsoftアカウント / ニックネーム">
+  </div>
+  <div class="btn-row">
+    <button id="login" class="btn-primary">ログイン</button>
+    <button id="logout" class="btn-danger">切断</button>
+  </div>
 </div>
 
-<div id="log"></div>
-
-<div class="row">
-  <input id="text" placeholder="メッセージ" maxlength="256">
-  <button id="send">送信</button>
+<div class="card">
+  <div style="margin-bottom:.6rem;">
+    <span id="status-dot"></span><span id="status-text">未接続</span>
+  </div>
+  <div id="log"></div>
+  <div class="chat-row">
+    <input id="text" placeholder="メッセージを入力..." maxlength="256">
+    <button id="send" class="btn-primary">送信</button>
+  </div>
 </div>
 
 <script>
-// 同じサーバーから配信する場合は空のままでOK。
-// GitHub Pagesなど別ドメインに置く場合は 'wss://your-app.onrender.com' を指定
 const BACKEND_URL = ''
 
 const url = BACKEND_URL || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`
 const ws = new WebSocket(url)
 const $ = (id) => document.getElementById(id)
 const log = $('log')
+const dot = $('status-dot')
+const statusText = $('status-text')
+
+const setStatus = (state, text) => {
+  dot.className = state
+  statusText.textContent = text
+}
 
 // ===== Minecraftの色コード(§)をHTMLに変換する =====
 const MC_COLORS = {
@@ -108,13 +226,19 @@ const mcToHtml = (text) => {
 }
 
 const TYPE_LABEL = { chat: 'chat', status: 'status', error: 'error', auth: 'auth', sent: '送信' }
+const TYPE_COLOR = { status: '#7fb8e0', error: '#e05252', auth: '#e0c050', sent: '#8fd1ff' }
 
 const addLog = (type, text) => {
-  // サーバーから来たメッセージ（チャットと、キック理由）はMinecraft風の色付きで表示
   const useColor = type === 'chat' || (type === 'error' && /^kicked:/.test(text))
   const label = TYPE_LABEL[type] || type
   const line = document.createElement('div')
-  if (type === 'sent') line.style.color = '#8fd1ff'
+
+  const tag = document.createElement('span')
+  tag.className = 'tag'
+  tag.textContent = `[${label}]`
+  if (TYPE_COLOR[type]) tag.style.color = TYPE_COLOR[type]
+  line.appendChild(tag)
+
   if (useColor) {
     let display = text
     const m = text.match(/^kicked:\s*(\{.*\})$/s)
@@ -124,23 +248,34 @@ const addLog = (type, text) => {
         display = (obj.text || '') + (obj.extra ? obj.extra.map((e) => e.text || '').join('') : '')
       } catch {}
     }
-    line.innerHTML = `[${label}] ` + mcToHtml(display)
+    const span = document.createElement('span')
+    span.innerHTML = mcToHtml(display)
+    line.appendChild(span)
   } else {
-    line.textContent = `[${label}] ${text}`
+    line.appendChild(document.createTextNode(text))
   }
+
   log.appendChild(line)
   log.scrollTop = log.scrollHeight
+
+  // ステータス表示の更新
+  if (type === 'status') {
+    if (/^ログイン完了/.test(text)) setStatus('on', 'ログイン中')
+    else if (/^切断されました/.test(text)) setStatus('off', '切断済み')
+    else if (/^接続中/.test(text)) setStatus('', '接続中...')
+    else if (/^生存確認/.test(text)) setStatus('on', 'ログイン中')
+  }
+  if (type === 'error' && /^kicked:/.test(text)) setStatus('off', 'キックされました')
 }
 // ===============================================
 
 ws.onopen = () => addLog('status', 'サーバーに接続しました')
-ws.onclose = () => addLog('status', 'サーバーとの接続が切れました')
+ws.onclose = () => { addLog('status', 'サーバーとの接続が切れました'); setStatus('off', '未接続') }
 ws.onmessage = (e) => {
   const { type, text } = JSON.parse(e.data)
   addLog(type, text)
 }
 
-// 前回入力したサーバーを復元（保存できない環境では無視）
 try {
   const saved = localStorage.getItem('mc-server')
   if (saved) $('server').value = saved
@@ -148,6 +283,7 @@ try {
 
 $('login').onclick = () => {
   try { localStorage.setItem('mc-server', $('server').value) } catch {}
+  setStatus('', '接続中...')
   ws.send(JSON.stringify({
     type: 'login',
     server: $('server').value,
