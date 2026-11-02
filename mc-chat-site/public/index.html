@@ -10,7 +10,8 @@
   .row input, .row select { flex: 1; padding: .5rem; }
   button { padding: .5rem 1rem; }
   #log { height: 320px; overflow: auto; border: 1px solid #888; padding: .5rem;
-         white-space: pre-wrap; font-family: monospace; font-size: 13px; }
+         white-space: pre-wrap; font-family: monospace; font-size: 13px;
+         background: #1e1e1e; color: #ddd; }
 </style>
 </head>
 <body>
@@ -51,10 +52,82 @@ const ws = new WebSocket(url)
 const $ = (id) => document.getElementById(id)
 const log = $('log')
 
+// ===== Minecraftの色コード(§)をHTMLに変換する =====
+const MC_COLORS = {
+  '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+  '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+  '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
+  'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF',
+}
+
+const mcToHtml = (text) => {
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  let html = ''
+  let span = false
+  let color = null
+  let bold = false
+  let italic = false
+  let strike = false
+  let underline = false
+
+  const openSpan = () => {
+    if (span) html += '</span>'
+    const styles = [`color:${color || 'inherit'}`]
+    if (bold) styles.push('font-weight:bold')
+    if (italic) styles.push('font-style:italic')
+    const deco = []
+    if (strike) deco.push('line-through')
+    if (underline) deco.push('underline')
+    if (deco.length) styles.push(`text-decoration:${deco.join(' ')}`)
+    html += `<span style="${styles.join(';')}">`
+    span = true
+  }
+
+  openSpan()
+  const parts = text.split('§')
+  for (let i = 0; i < parts.length; i++) {
+    if (i === 0) {
+      html += esc(parts[i])
+      continue
+    }
+    const code = parts[i][0]?.toLowerCase()
+    const rest = parts[i].slice(1)
+    if (MC_COLORS[code]) {
+      color = MC_COLORS[code]
+      bold = italic = strike = underline = false
+      openSpan()
+    } else if (code === 'l') { bold = true; openSpan() }
+    else if (code === 'o') { italic = true; openSpan() }
+    else if (code === 'm') { strike = true; openSpan() }
+    else if (code === 'n') { underline = true; openSpan() }
+    else if (code === 'r') { color = null; bold = italic = strike = underline = false; openSpan() }
+    html += esc(rest)
+  }
+  if (span) html += '</span>'
+  return html
+}
+
 const addLog = (type, text) => {
-  log.textContent += `[${type}] ${text}\n`
+  // サーバーから来たメッセージ（チャットと、キック理由）はMinecraft風の色付きで表示
+  const useColor = type === 'chat' || (type === 'error' && /^kicked:/.test(text))
+  const line = document.createElement('div')
+  if (useColor) {
+    let display = text
+    const m = text.match(/^kicked:\s*(\{.*\})$/s)
+    if (m) {
+      try {
+        const obj = JSON.parse(m[1])
+        display = (obj.text || '') + (obj.extra ? obj.extra.map((e) => e.text || '').join('') : '')
+      } catch {}
+    }
+    line.innerHTML = `[${type}] ` + mcToHtml(display)
+  } else {
+    line.textContent = `[${type}] ${text}`
+  }
+  log.appendChild(line)
   log.scrollTop = log.scrollHeight
 }
+// ===============================================
 
 ws.onopen = () => addLog('status', 'サーバーに接続しました')
 ws.onclose = () => addLog('status', 'サーバーとの接続が切れました')
