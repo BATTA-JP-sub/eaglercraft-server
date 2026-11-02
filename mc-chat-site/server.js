@@ -4,6 +4,26 @@ const dns = require('dns').promises
 const net = require('net')
 const WebSocket = require('ws')
 const mineflayer = require('mineflayer')
+const mc = require('minecraft-protocol');
+const bot = mc.createClient({
+  host: 'localhost',
+  port: 25565,
+  username: 'Player_Bot',
+  version: '1.12.2'
+});
+
+bot.on('login', () => {
+  console.log('サーバーにログインしました。');
+});
+
+bot.on('error', (err) => {
+  console.error('接続エラー:', err.message);
+});
+
+bot.on('end', () => {
+  console.log('サーバーから切断されました。');
+});
+
 
 // ===== 設定（環境変数で変更可能）=====
 // 画面でサーバーを指定しなかった場合の接続先
