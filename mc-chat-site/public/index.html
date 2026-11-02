@@ -17,7 +17,10 @@
 <h1>MC Chat</h1>
 
 <div class="row">
-  <input id="server" value="wss://mc.lampnetwork.net" placeholder="接続先サーバー（例: wss://example.com）">
+  <input id="server" value="wss://mc.lampnetwork.net" placeholder="wss://... または mc.example.com:25565">
+</div>
+<div class="row">
+  <input id="version" placeholder="バージョン（空欄で自動。例: 1.8.8）">
 </div>
 <div class="row">
   <input id="user" placeholder="Microsoftアカウント / ニックネーム">
@@ -71,6 +74,7 @@ $('login').onclick = () => {
   ws.send(JSON.stringify({
     type: 'login',
     server: $('server').value,
+    version: $('version').value,
     username: $('user').value,
     auth: $('auth').value,
   }))
