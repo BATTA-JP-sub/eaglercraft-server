@@ -502,7 +502,7 @@ const addLogNow = (type, text) => {
   log.appendChild(line)
 
   if (type === 'status') {
-    if (/^ログイン完了/.test(text)) {
+    if (/^接続完了/.test(text)) {
       setStatus('on', 'ログイン中')
     } else if (/^切断されました/.test(text)) {
       setStatus('off', '切断済み')
