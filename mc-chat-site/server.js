@@ -149,44 +149,110 @@ wss.on('connection', (ui) => {
   }
 
   // Mineflayerが把握しているボットの状態を読み取り、画面へ送る
-  const sendPlayerState = () => {
-    if (!bot?.entity || ui.readyState !== WebSocket.OPEN) return
+ // プレイヤーの現在の状態（そっくりに模倣するためのベースデータ）
+const playerState = {
+    x: 120.50,
+    y: 64.00,
+    z: -345.25,
+    yaw: 90.0,    // 首の横振り（度数法）
+    pitch: 0.0,   // 首の縦振り（度数法）
+    onGround: true,
+    heldItemSlot: 0, // 現在持っているホットバーのスロット (0-8)
+    entityId: 12345, // プレイヤー自身のEntity ID
+    targetEntityId: 67890 // インタラクト対象のMob等のEntity ID
+};
 
-    const p = bot.entity.position
+// パケットを送信するメイン関数
+function sendPlayerPackets(client) {
+    // 1. CPacketPlayer (地面にいるかどうかの状態のみ)
+    client.write('position', {
+        onGround: playerState.onGround
+    });
 
-    const state = {
-      player: {
-        x: p.x,
-        y: p.y,
-        z: p.z,
-        yawDegrees: bot.entity.yaw * (180 / Math.PI),
-        pitchDegrees: bot.entity.pitch * (180 / Math.PI),
-        onGround: Boolean(bot.entity.onGround),
-        entityId: bot.entity.id,
-        heldItemSlot: bot.quickBarSlot,
-      },
+    // 2. CPacketPlayerPosition (位置情報のみ)
+    client.write('position', {
+        x: playerState.x,
+        feetY: playerState.y,
+        z: playerState.z,
+        onGround: playerState.onGround
+    });
 
-      heldItem: bot.heldItem
-        ? {
-            name: bot.heldItem.name,
-            count: bot.heldItem.count,
-          }
-        : null,
+    // 3. CPacketPlayerLook (視線情報のみ)
+    client.write('look', {
+        yaw: playerState.yaw,
+        pitch: playerState.pitch,
+        onGround: playerState.onGround
+    });
 
-      actions: {
-        animation: null,
-        useEntityTarget: null,
-        digging: null,
-        blockUse: null,
-        chatMessage: null,
-        clientStatus: null,
-        windowClick: null,
-        closeWindow: null,
-      },
-    }
+    // 4. CPacketPlayerPosLook (位置と視線の両方)
+    client.write('position_look', {
+        x: playerState.x,
+        feetY: playerState.y,
+        z: playerState.z,
+        yaw: playerState.yaw,
+        pitch: playerState.pitch,
+        onGround: playerState.onGround
+    });
 
-    send('playerState', JSON.stringify(state))
-  }
+    // 5. CPacketAnimation (腕を振るモーション / メインハンド: 0)
+    client.write('arm_animation', {
+        hand: 0 
+    });
+
+    // 6. CPacketUseEntity (エンティティに対するアクション / 右クリック・攻撃など)
+    client.write('use_entity', {
+        target: playerState.targetEntityId,
+        mouse: 0, // 0: インタラクト, 1: 攻撃, 2: 指定位置をインタラクト
+        hand: 0   // 0: メインハンド
+    });
+
+    // 7. CPacketPlayerDigging (ブロックの採掘開始・中止・完了など)
+    client.write('block_dig', {
+        status: 0, // 0: 採掘開始, 1: 採掘キャンセル, 2: 採掘完了
+        location: { x: 120, y: 63, z: -346 }, // 破壊対象ブロックの座標
+        face: 1 // 1: ブロックの上面
+    });
+
+    // 8. CPacketTryUseItemOnBlock (ブロックに対してアイテムを使用する / 右クリック設置)
+    client.write('block_place', {
+        location: { x: 120, y: 63, z: -346 },
+        direction: 1, // 1: 上面
+        hand: 0,      // 0: メインハンド
+        cursorX: 0.5, // ブロック内の詳細なクリック位置(0.0 ~ 1.0)
+        cursorY: 1.0,
+        cursorZ: 0.5
+    });
+
+    // 9. CPacketChatMessage (チャットの送信)
+    client.write('chat', {
+        message: "Hello, this is a simulated player packet!"
+    });
+
+    // 10. CPacketClientStatus (クライアントのステータス更新 / リスポーンや実績画面の要求)
+    client.write('client_command', {
+        actionId: 0 // 0: リスポーン要求, 1: 統計情報の要求
+    });
+
+    // 11. CPacketClickWindow (インベントリやチェスト内のクリック操作)
+    client.write('window_click', {
+        windowId: 0,      // 0: プレイヤーのインベントリ
+        slot: 36,         // インベントリ内のスロット番号
+        mouseButton: 0,   // 0: 左クリック
+        actionSeq: 1,     // アクションのシリアル番号
+        mode: 0,          // 0: 通常クリック
+        item: { blockId: -1 } // クリック時のスロットのアイテムデータ（空なら-1）
+    });
+
+    // 12. CPacketCloseWindow (開いているインベントリ画面を閉じる)
+    client.write('close_window', {
+        windowId: 0
+    });
+
+    // 13. CPacketHeldItemChange (ホットバーの選択スロット変更)
+    client.write('held_item_slot', {
+        slotId: playerState.heldItemSlot
+    });
+}
 
   const startBot = (username, auth, target, version) => {
     send(
