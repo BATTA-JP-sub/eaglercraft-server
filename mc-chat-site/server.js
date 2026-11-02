@@ -178,9 +178,6 @@ wss.on('connection', (ui) => {
       if (!bot) return send('error', '先にログインしてください')
       const text = String(msg.text || '').trim().slice(0, MAX_CHAT_LENGTH)
       if (!text) return
-      const now = Date.now()
-      if (now - lastChatAt < CHAT_INTERVAL_MS) return send('error', '送信が早すぎます')
-      lastChatAt = now
       bot.chat(text)
       send('sent', text)
     }
