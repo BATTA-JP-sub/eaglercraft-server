@@ -129,7 +129,7 @@ wss.on('connection', (ui) => {
     bot = mineflayer.createBot(options)
 
     bot.once('spawn', () => {
-      send('status', 'ログイン完了')
+      send('status', '接続完了')
       // 切断の原因を調べるための生存確認（5秒おき）
       heartbeat = setInterval(() => {
         if (!bot) return
